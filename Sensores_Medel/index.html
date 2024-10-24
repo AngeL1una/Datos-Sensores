@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captura de Sensores</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin-top: 50px; 
+        }
+        p { font-size: 18px; margin: 10px 0; white-space: pre-wrap; }
+        button { margin-top: 20px; padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Captura de Sensores Angel Luna Lugo</h1>
+    <p id="sensorData">Esperando datos de sensores...</p>
+    <button id="startBtn">Iniciar Captura</button>
+    <button id="downloadBtn">Descargar Datos</button>
+
+    <script>
+        let ax = 0, ay = 0, az = 0, gx = 0, gy = 0, gz = 0;
+        let capturando = false;
+
+        // Comprobar acceso a los sensores
+        function verificarPermisos() {
+            if (!('Accelerometer' in window) || !('Gyroscope' in window)) {
+                alert('Este navegador no admite los sensores de movimiento.');
+                return false;
+            }
+            return true;
+        }
+
+        // Inicializar el evento del botón "Iniciar Captura"
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!capturando) {
+                if (verificarPermisos()) {
+                    try {
+                        iniciarCaptura();
+                        capturando = true;
+                        document.getElementById('startBtn').textContent = 'Capturando...';
+                    } catch (error) {
+                        alert('Error al iniciar los sensores: ' + error.message);
+                    }
+                }
+            } else {
+                alert('La captura ya está en curso.');
+            }
+        });
+
+        // Función para iniciar la captura de sensores con 100 Hz
+        function iniciarCaptura() {
+            try {
+                // Inicializar el acelerómetro con frecuencia de 100 Hz
+                const accelerometer = new Accelerometer({ frequency: 100 });
+                accelerometer.addEventListener('reading', () => {
+                    ax = accelerometer.x.toFixed(2);
+                    ay = accelerometer.y.toFixed(2);
+                    az = accelerometer.z.toFixed(2);
+                    mostrarDatos();
+                });
+                accelerometer.start();
+
+                // Inicializar el giroscopio con frecuencia de 100 Hz
+                const gyroscope = new Gyroscope({ frequency: 100 });
+                gyroscope.addEventListener('reading', () => {
+                    gx = gyroscope.x.toFixed(2);
+                    gy = gyroscope.y.toFixed(2);
+                    gz = gyroscope.z.toFixed(2);
+                    mostrarDatos();
+                });
+                gyroscope.start();
+
+            } catch (error) {
+                alert('No se pudieron iniciar los sensores: ' + error.message);
+            }
+        }
+
+        // Mostrar datos en pantalla
+        function mostrarDatos() {
+            const fecha = new Date();
+            const tiempo = `${fecha.getHours()}:${fecha.getMinutes()}:${fecha.getSeconds()}`;
+            const label = 'movimiento de mano';
+
+            const datosEnPantalla = 
+                `Hora: ${tiempo}\n` +
+                `Acc X: ${ax}\n` +
+                `Acc Y: ${ay}\n` +
+                `Acc Z: ${az}\n` +
+                `Gyro X: ${gx}\n` +
+                `Gyro Y: ${gy}\n` +
+                `Gyro Z: ${gz}\n` +
+                `Etiqueta: ${label}`;
+
+            document.getElementById('sensorData').textContent = datosEnPantalla;
+        }
+
+        // Descargar solo los datos visibles
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const datosVisibles = document.getElementById('sensorData').textContent;
+
+            if (datosVisibles.includes('Hora:')) {
+                const url = 'data:text/plain;charset=utf-8,' + encodeURIComponent(datosVisibles);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'datos_visibles.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                alert('No hay datos visibles para descargar.');
+            }
+        });
+    </script>
+</body>
+</html>
